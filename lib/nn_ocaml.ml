@@ -27,10 +27,11 @@ let%test_unit "002 Last two elements of a list" =
 let rec nth lis k =
   match lis with
   | [] -> None
-  | first :: rest -> if k = 0 then first else nth rest (k - 1)
+  | first :: rest -> if k = 0 then Some first else nth rest (k - 1)
 ;;
 
 let%test_unit "003 N'th element of a list" =
-  [%test_eq: string option] (List.nth [ "a"; "b"; "c"; "d"; "e" ] 2) (Some "c");
-  [%test_eq: string option] (List.nth [ "a" ] 2) None
+  [%test_eq: string option] (nth [ "a"; "b"; "c"; "d"; "e" ] 2) (Some "c");
+  [%test_eq: string option] (nth [ "a" ] 2) None
+;;
 ;;
