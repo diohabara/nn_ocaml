@@ -34,4 +34,33 @@ let%test_unit "003 N'th element of a list" =
   [%test_eq: string option] (nth [ "a"; "b"; "c"; "d"; "e" ] 2) (Some "c");
   [%test_eq: string option] (nth [ "a" ] 2) None
 ;;
+
+let rec length lis =
+  match lis with
+  | [] -> 0
+  | _ :: rest -> 1 + length rest
+;;
+
+let%test_unit "004 Length of a list" =
+  [%test_eq: int] (length [ "a"; "b"; "c" ]) 3;
+  [%test_eq: int] (length []) 0
+;;
+
+let rev lis =
+  let rec helper acc = function
+    | [] -> acc
+    | first :: rest -> helper (first :: acc) rest
+  in
+  helper [] lis
+;;
+
+let%test_unit "005 Reverse a list" =
+  [%test_eq: string list] (rev [ "a"; "b"; "c" ]) [ "c"; "b"; "a" ]
+;;
+
+let is_palindrome lis = List.equal String.equal lis (rev lis)
+
+let%test_unit "006 Palindrome" =
+  [%test_eq: bool] (is_palindrome [ "x"; "a"; "m"; "a"; "x" ]) true;
+  [%test_eq: bool] (not (is_palindrome [ "a"; "b" ])) true
 ;;
