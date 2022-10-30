@@ -1,4 +1,4 @@
 (executable
- (public_name ocaml_template)
+ (public_name nn_ocaml)
  (name main)
- (libraries ocaml_template))
+ (libraries nn_ocaml))

@@ -1,4 +1,4 @@
-# ocaml_template
+# nn_ocaml
 
 template repository for ocaml
 
@@ -15,7 +15,7 @@ opam install . --deps-only
 ## how to run
 
 ```bash
-dune exec ocaml_template
+dune exec nn_ocaml
 ```
 
 ## how to build

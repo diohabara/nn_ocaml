@@ -1,11 +1,11 @@
 (lang dune 3.4)
 
-(name ocaml_template)
+(name nn_ocaml)
 
 (generate_opam_files true)
 
 (source
- (github diohabara/ocaml_template))
+ (github diohabara/nn_ocaml))
 
 (authors "diohabara")
 
@@ -13,10 +13,10 @@
 
 (license MIT)
 
-(documentation https://github.com/diohabara/ocaml_template)
+(documentation https://github.com/diohabara/nn_ocaml)
 
 (package
- (name ocaml_template)
+ (name nn_ocaml)
  (synopsis "A short synopsis")
  (description "A longer description")
  (depends

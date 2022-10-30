@@ -1,2 +1,2 @@
 (test
- (name ocaml_template))
+ (name nn_ocaml))
