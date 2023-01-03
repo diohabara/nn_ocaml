@@ -64,3 +64,57 @@ let%test_unit "006 Palindrome" =
   [%test_eq: bool] (is_palindrome [ "x"; "a"; "m"; "a"; "x" ]) true;
   [%test_eq: bool] (not (is_palindrome [ "a"; "b" ])) true
 ;;
+
+type 'a node =
+  | One of 'a
+  | Many of 'a node list
+
+let flatten lis =
+  let rec aux acc = function
+    | [] -> acc
+    | One x :: t -> aux (x :: acc) t
+    | Many l :: t -> aux (aux acc l) t
+  in
+  List.rev (aux [] lis)
+;;
+
+let%test_unit "007 Flatten a list" =
+  [%test_eq: string list]
+    (flatten [ One "a"; Many [ One "b"; Many [ One "c"; One "d" ]; One "e" ] ])
+    [ "a"; "b"; "c"; "d"; "e" ]
+;;
+
+let rec compress = function
+  | a :: (b :: _ as t) -> if phys_equal a b then compress t else a :: compress t
+  | smaller -> smaller
+;;
+
+let%test_unit "008 Eliminate duplicates" =
+  [%test_eq: string list]
+    (compress [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
+    [ "a"; "b"; "c"; "a"; "d"; "e" ]
+;;
+
+let pack list =
+  let rec aux current acc = function
+    | [] -> []
+    | [ x ] -> (x :: current) :: acc
+    | a :: (b :: _ as t) ->
+      if phys_equal a b
+      then aux (a :: current) acc t
+      else aux [] ((a :: current) :: acc) t
+  in
+  List.rev (aux [] [] list)
+;;
+
+let%test_unit "009 Pack consecutive duplicates" =
+  [%test_eq: string list list]
+    (pack [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "d"; "e"; "e"; "e"; "e" ])
+    [ [ "a"; "a"; "a"; "a" ]
+    ; [ "b" ]
+    ; [ "c"; "c" ]
+    ; [ "a"; "a" ]
+    ; [ "d"; "d" ]
+    ; [ "e"; "e"; "e"; "e" ]
+    ]
+;;
