@@ -134,3 +134,37 @@ let%test_unit "010 Run-length encoding" =
     (encode [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
     [ 4, "a"; 1, "b"; 2, "c"; 2, "a"; 1, "d"; 4, "e" ]
 ;;
+
+type 'a rle =
+  | One of 'a
+  | Many of int * 'a
+
+let encode list =
+  let create_tuple count element =
+    if count = 1 then One element else Many (count, element)
+  in
+  let rec aux count acc = function
+    | [] -> []
+    | [ x ] -> create_tuple (count + 1) x :: acc
+    | a :: (b :: _ as t) ->
+      if phys_equal a b
+      then aux (count + 1) acc t
+      else aux 0 (create_tuple (count + 1) a :: acc) t
+  in
+  List.rev (aux 0 [] list)
+;;
+
+let rle_equal x y =
+  match x, y with
+  | One x_val, One y_val -> phys_equal x_val y_val
+  | Many (x_count, x_val), Many (y_count, y_val) ->
+    x_count = y_count && phys_equal x_val y_val
+  | _ -> false
+;;
+
+let%test "011 Modified run-length encoding" =
+  List.equal
+    rle_equal
+    (encode [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
+    [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ]
+;;
