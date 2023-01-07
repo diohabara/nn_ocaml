@@ -168,3 +168,20 @@ let%test "011 Modified run-length encoding" =
     (encode [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
     [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ]
 ;;
+
+let decode list =
+  let rec many acc n x = if n = 0 then acc else many (x :: acc) (n - 1) x in
+  let rec aux acc = function
+    | [] -> acc
+    | One x :: t -> aux (x :: acc) t
+    | Many (n, x) :: t -> aux (many acc n x) t
+  in
+  List.rev (aux [] list)
+;;
+
+let%test_unit "012 Decode a run-length encoded list" =
+  [%test_eq: string list]
+    (decode
+       [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ])
+    [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ]
+;;
