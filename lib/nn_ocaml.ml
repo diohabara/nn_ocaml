@@ -185,3 +185,21 @@ let%test_unit "012 Decode a run-length encoded list" =
        [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ])
     [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ]
 ;;
+
+let encode list =
+  let rle count x = if count = 0 then One x else Many (count + 1, x) in
+  let rec aux count acc = function
+    | [] -> []
+    | [ x ] -> rle count x :: acc
+    | a :: (b :: _ as t) ->
+      if phys_equal a b then aux (count + 1) acc t else aux 0 (rle count a :: acc) t
+  in
+  aux 0 [] (List.rev list)
+;;
+
+let%test "013 Run-length encoding of a list (direct solution)" =
+  List.equal
+    rle_equal
+    (encode [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
+    [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ]
+;;
