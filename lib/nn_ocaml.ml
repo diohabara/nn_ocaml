@@ -203,3 +203,46 @@ let%test "013 Run-length encoding of a list (direct solution)" =
     (encode [ "a"; "a"; "a"; "a"; "b"; "c"; "c"; "a"; "a"; "d"; "e"; "e"; "e"; "e" ])
     [ Many (4, "a"); One "b"; Many (2, "c"); Many (2, "a"); One "d"; Many (4, "e") ]
 ;;
+
+let duplicate list =
+  let rec aux acc = function
+    | [] -> acc
+    | x :: t -> aux (x :: x :: acc) t
+  in
+  aux [] (List.rev list)
+;;
+
+let%test_unit "014 Duplicate the elements of a list" =
+  [%test_eq: string list]
+    (duplicate [ "a"; "b"; "c"; "c"; "d" ])
+    [ "a"; "a"; "b"; "b"; "c"; "c"; "c"; "c"; "d"; "d" ]
+;;
+
+let replicate list count =
+  let rec many x n = if n = 0 then [] else x :: many x (n - 1) in
+  let rec aux acc = function
+    | [] -> acc
+    | x :: t -> aux (many x count @ acc) t
+  in
+  aux [] (List.rev list)
+;;
+
+let%test_unit "015 Replicate the elements of a list a given number of times" =
+  [%test_eq: string list]
+    (replicate [ "a"; "b"; "c" ] 3)
+    [ "a"; "a"; "a"; "b"; "b"; "b"; "c"; "c"; "c" ]
+;;
+
+let drop list n =
+  let rec aux acc count = function
+    | [] -> acc
+    | a :: t -> if count + 1 = n then aux acc 0 t else aux (a :: acc) (count + 1) t
+  in
+  List.rev (aux [] 0 list)
+;;
+
+let%test_unit "016 Drop every N'th element from a list" =
+  [%test_eq: string list]
+    (drop [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j" ] 3)
+    [ "a"; "b"; "d"; "e"; "g"; "h"; "j" ]
+;;
