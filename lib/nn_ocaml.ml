@@ -246,3 +246,20 @@ let%test_unit "016 Drop every N'th element from a list" =
     (drop [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j" ] 3)
     [ "a"; "b"; "d"; "e"; "g"; "h"; "j" ]
 ;;
+
+let split list count =
+  let rec aux i acc = function
+    | [] -> List.rev acc, []
+    | h :: t as l -> if i = 0 then List.rev acc, l else aux (i - 1) (h :: acc) t
+  in
+  aux count [] list
+;;
+
+let%test_unit "017 Split a list into two parts; the length of the first part is given" =
+  [%test_eq: string list * string list]
+    (split [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j" ] 3)
+    ([ "a"; "b"; "c" ], [ "d"; "e"; "f"; "g"; "h"; "i"; "j" ]);
+  [%test_eq: string list * string list]
+    (split [ "a"; "b"; "c"; "d" ] 5)
+    ([ "a"; "b"; "c"; "d" ], [])
+;;
