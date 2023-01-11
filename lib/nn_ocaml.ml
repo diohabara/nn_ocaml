@@ -263,3 +263,17 @@ let%test_unit "017 Split a list into two parts; the length of the first part is 
     (split [ "a"; "b"; "c"; "d" ] 5)
     ([ "a"; "b"; "c"; "d" ], [])
 ;;
+
+let slice list s e =
+  let rec aux i acc = function
+    | [] -> acc
+    | h :: t -> if s <= i && i <= e then aux (i + 1) (h :: acc) t else aux (i + 1) acc t
+  in
+  List.rev (aux 0 [] list)
+;;
+
+let%test_unit "018 Extract a slice from a list" =
+  [%test_eq: string list]
+    (slice [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j" ] 2 6)
+    [ "c"; "d"; "e"; "f"; "g" ]
+;;
