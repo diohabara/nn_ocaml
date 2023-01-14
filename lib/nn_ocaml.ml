@@ -277,3 +277,19 @@ let%test_unit "018 Extract a slice from a list" =
     (slice [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h"; "i"; "j" ] 2 6)
     [ "c"; "d"; "e"; "f"; "g" ]
 ;;
+
+let rotate list n =
+  let len = List.length list in
+  let n = if len = 0 then 0 else ((n % len) + len) % len in
+  if n = 0
+  then list
+  else (
+    let a, b = split list n in
+    b @ a)
+;;
+
+let%test_unit "019 Rotate a list N places to the left" =
+  [%test_eq: string list]
+    (rotate [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h" ] 3)
+    [ "d"; "e"; "f"; "g"; "h"; "a"; "b"; "c" ]
+;;
