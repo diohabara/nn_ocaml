@@ -293,3 +293,17 @@ let%test_unit "019 Rotate a list N places to the left" =
     (rotate [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h" ] 3)
     [ "d"; "e"; "f"; "g"; "h"; "a"; "b"; "c" ]
 ;;
+
+let remove_at n l =
+  let rec aux count = function
+    | [] -> []
+    | h :: t -> if count = n then t else h :: (aux (count + 1) t)
+  in
+  aux 0 l
+;;
+
+let%test_unit "020 Remove the K'th element from a list" =
+  [%test_eq: string list]
+  (remove_at 1 ["a"; "b"; "c"; "d"])
+  ["a"; "c"; "d"]
+;;
