@@ -297,13 +297,66 @@ let%test_unit "019 Rotate a list N places to the left" =
 let remove_at n l =
   let rec aux count = function
     | [] -> []
-    | h :: t -> if count = n then t else h :: (aux (count + 1) t)
+    | h :: t -> if count = n then t else h :: aux (count + 1) t
   in
   aux 0 l
 ;;
 
 let%test_unit "020 Remove the K'th element from a list" =
+  [%test_eq: string list] (remove_at 1 [ "a"; "b"; "c"; "d" ]) [ "a"; "c"; "d" ]
+;;
+
+let insert_at x n l =
+  let rec aux count = function
+    | [] -> [ x ]
+    | h :: t -> if n <= count then x :: h :: t else h :: aux (count + 1) t
+  in
+  aux 0 l
+;;
+
+let%test_unit "021 Insert an element at a given position into a list" =
   [%test_eq: string list]
-  (remove_at 1 ["a"; "b"; "c"; "d"])
-  ["a"; "c"; "d"]
+    (insert_at "alfa" 1 [ "a"; "b"; "c"; "d" ])
+    [ "a"; "alfa"; "b"; "c"; "d" ];
+  [%test_eq: string list]
+    (insert_at "alfa" 7 [ "a"; "b"; "c"; "d" ])
+    [ "a"; "b"; "c"; "d"; "alfa" ]
+;;
+
+let range a b =
+  let rec aux acc x y = if x > y then acc else aux (x :: acc) (x + 1) y in
+  if a <= b then List.rev (aux [] a b) else aux [] b a
+;;
+
+let%test_unit "022 Create a list containing all integers within a given range" =
+  [%test_eq: int list] (range 4 9) [ 4; 5; 6; 7; 8; 9 ];
+  [%test_eq: int list] (range 9 4) [ 9; 8; 7; 6; 5; 4 ]
+;;
+
+let rand_select l n =
+  let rec extract acc n = function
+    | [] -> failwith "extract"
+    | h :: t -> if n = 0 then h, acc @ t else extract (h :: acc) (n - 1) t
+  in
+  let extract_rand list len =
+    let i = Random.int len in
+    let picked, rest = extract [] i list in
+    picked, rest
+  in
+  let rec aux n acc list len =
+    if n = 0
+    then acc
+    else (
+      let picked, rest = extract_rand list len in
+      aux (n - 1) (picked :: acc) rest (len - 1))
+  in
+  aux (min n (List.length l)) [] l (List.length l)
+;;
+
+let%test_unit "023 Extract a given number of randomly selected elements from a list" =
+  let l = [ "a"; "b"; "c"; "d"; "e"; "f"; "g"; "h" ] in
+  let r = rand_select l 3 in
+  [%test_eq: int] (List.length r) 3;
+  List.iter r ~f:(fun x ->
+    [%test_result: bool] ~expect:true (List.mem l x ~equal:String.equal))
 ;;
