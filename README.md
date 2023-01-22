@@ -1,9 +1,5 @@
 # nn_ocaml
 
-template repository for ocaml
-
-**replace every `ocaml_tempalte` with your own project name**
-
 ## how to set up
 
 ```bash
