@@ -360,3 +360,180 @@ let%test_unit "023 Extract a given number of randomly selected elements from a l
   List.iter r ~f:(fun x ->
     [%test_result: bool] ~expect:true (List.mem l x ~equal:String.equal))
 ;;
+
+let lotto_select n m =
+  let rec aux acc count =
+    if count = n then acc else aux (Random.int m :: acc) (count + 1)
+  in
+  aux [] 0
+;;
+
+let%test_unit "024 Lotto: Draw N different random numbers from the set 1..M" =
+  let achieved = lotto_select 6 49 in
+  [%test_eq: int] (List.length achieved) 6;
+  List.iter achieved ~f:(fun x -> [%test_result: bool] ~expect:true (x >= 1 && x <= 49))
+;;
+
+let permutation list =
+  let rec extract acc n = function
+    | [] -> failwith "extract"
+    | h :: t -> if n = 0 then h, acc @ t else extract (h :: acc) (n - 1) t
+  in
+  let extract_rand list len =
+    let i = Random.int len in
+    let picked, rest = extract [] i list in
+    picked, rest
+  in
+  let rec aux acc = function
+    | [] -> acc
+    | l ->
+      let picked, rest = extract_rand l (List.length l) in
+      aux (picked :: acc) rest
+  in
+  aux [] list
+;;
+
+let%test_unit "025 Generate a random permutation of the elements of a list" =
+  let original = [ "a"; "b"; "c"; "d"; "e"; "f" ] in
+  let achieved = permutation original in
+  [%test_eq: int] (List.length achieved) (List.length original);
+  List.iter achieved ~f:(fun x ->
+    [%test_result: bool] ~expect:true (List.mem original x ~equal:String.equal))
+;;
+
+let rec extract n list =
+  if n <= 0
+  then [ [] ]
+  else (
+    match list with
+    | [] -> []
+    | h :: t ->
+      let with_h = List.map ~f:(fun l -> h :: l) (extract (n - 1) t) in
+      let without_h = extract n t in
+      with_h @ without_h)
+;;
+
+let%test_unit "026 Generate the combinations of K distinct objects chosen from the N \
+               elements of a list"
+  =
+  [%test_eq: string list list]
+    (extract 2 [ "a"; "b"; "c"; "d" ])
+    [ [ "a"; "b" ]; [ "a"; "c" ]; [ "a"; "d" ]; [ "b"; "c" ]; [ "b"; "d" ]; [ "c"; "d" ] ]
+;;
+
+let group list sizes =
+  let initial = List.map ~f:(fun size -> size, []) sizes in
+  let prepend p list =
+    let rec aux cons acc = function
+      | [] -> cons [] acc
+      | ((size, l) as h) :: t ->
+        let acc = if size > 0 then cons ((size - 1, p :: l) :: t) acc else acc in
+        aux (fun l acc -> cons (h :: l) acc) acc t
+    in
+    aux (fun l acc -> l :: acc) [] list
+  in
+  let rec aux = function
+    | [] -> [ initial ]
+    | h :: t -> List.concat (List.map ~f:(prepend h) (aux t))
+  in
+  let all = aux list in
+  let complete = List.filter ~f:(List.for_all ~f:(fun (size, _) -> size = 0)) all in
+  List.map ~f:(List.map ~f:snd) complete
+;;
+
+let%test_unit "027 Group the elements of a set into disjoint subsets" =
+  [%test_eq: string list list list]
+    (group [ "a"; "b"; "c"; "d" ] [ 2; 1 ])
+    [ [ [ "a"; "b" ]; [ "c" ] ]
+    ; [ [ "a"; "c" ]; [ "b" ] ]
+    ; [ [ "b"; "c" ]; [ "a" ] ]
+    ; [ [ "a"; "b" ]; [ "d" ] ]
+    ; [ [ "a"; "c" ]; [ "d" ] ]
+    ; [ [ "b"; "c" ]; [ "d" ] ]
+    ; [ [ "a"; "d" ]; [ "b" ] ]
+    ; [ [ "b"; "d" ]; [ "a" ] ]
+    ; [ [ "a"; "d" ]; [ "c" ] ]
+    ; [ [ "b"; "d" ]; [ "c" ] ]
+    ; [ [ "c"; "d" ]; [ "a" ] ]
+    ; [ [ "c"; "d" ]; [ "b" ] ]
+    ];
+  [%test_eq: string list list list] (group [ "a"; "b"; "c"; "d" ] [ 0 ]) [ [ [] ] ]
+;;
+
+let rec insert cmp e = function
+  | [] -> [ e ]
+  | h :: t as l -> if cmp e h <= 0 then e :: l else h :: insert cmp e t
+;;
+
+let rec sort cmp = function
+  | [] -> []
+  | h :: t -> insert cmp h (sort cmp t)
+;;
+
+let length_sort lists =
+  let lists = List.map ~f:(fun l -> l |> List.length, l) lists in
+  let lists = sort (fun a b -> compare (fst a) (fst b)) lists in
+  List.map ~f:snd lists
+;;
+
+let rle list =
+  let rec aux count acc = function
+    | [] -> [] (* Can only be reached if original list is empty *)
+    | [ x ] -> (x, count + 1) :: acc
+    | a :: (b :: _ as t) ->
+      if a = b then aux (count + 1) acc t else aux 0 ((a, count + 1) :: acc) t
+  in
+  aux 0 [] list
+;;
+
+let frequency_sort lists =
+  let lengths = List.map ~f:List.length lists in
+  let list_to_freq = rle (sort compare lengths) in
+  let by_freq =
+    List.map
+      ~f:(fun list ->
+        List.Assoc.find_exn ~equal:Int.equal list_to_freq (list |> List.length), list)
+      lists
+  in
+  let sorted = sort (fun a b -> compare (fst a) (fst b)) by_freq in
+  List.map ~f:snd sorted
+;;
+
+let%test_unit "028 Sorting a list of lists according to length of sublists" =
+  [%test_eq: string list list]
+    (length_sort
+       [ [ "a"; "b"; "c" ]
+       ; [ "d"; "e" ]
+       ; [ "f"; "g"; "h" ]
+       ; [ "d"; "e" ]
+       ; [ "i"; "j"; "k"; "l" ]
+       ; [ "m"; "n" ]
+       ; [ "o" ]
+       ])
+    [ [ "o" ]
+    ; [ "d"; "e" ]
+    ; [ "d"; "e" ]
+    ; [ "m"; "n" ]
+    ; [ "a"; "b"; "c" ]
+    ; [ "f"; "g"; "h" ]
+    ; [ "i"; "j"; "k"; "l" ]
+    ];
+  [%test_eq: string list list]
+    (frequency_sort
+       [ [ "a"; "b"; "c" ]
+       ; [ "d"; "e" ]
+       ; [ "f"; "g"; "h" ]
+       ; [ "d"; "e" ]
+       ; [ "i"; "j"; "k"; "l" ]
+       ; [ "m"; "n" ]
+       ; [ "o" ]
+       ])
+    [ [ "i"; "j"; "k"; "l" ]
+    ; [ "o" ]
+    ; [ "a"; "b"; "c" ]
+    ; [ "f"; "g"; "h" ]
+    ; [ "d"; "e" ]
+    ; [ "d"; "e" ]
+    ; [ "m"; "n" ]
+    ]
+;;
