@@ -1,5 +1,7 @@
 open Base
 
+(* Working with Lists *)
+
 let rec last lis =
   match lis with
   | [ first ] -> Some first
@@ -537,3 +539,25 @@ let%test_unit "028 Sorting a list of lists according to length of sublists" =
     ; [ "m"; "n" ]
     ]
 ;;
+
+(* Arithmetic *)
+let is_prime n =
+  let rec aux = function
+    | 1 -> true
+    | x -> x * x > n || (n mod x <> 0 && aux (x + 1))
+  in
+  n > 1 && aux 2
+let unit_test "031 Determine whether a given integer number is prime" =
+  [%test_eq: bool] (is_prime 1) true;
+  [%test_eq: bool] (is_prime 7) true;
+  [%test_eq: bool] (is_prime 12) false
+
+(* Logic and Codes *)
+
+(* Binary Trees *)
+
+(* Multiway Trees *)
+
+(* Graphs *)
+
+(* Mischelaneous Problems *)
