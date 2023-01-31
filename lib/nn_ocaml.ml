@@ -657,6 +657,87 @@ let%test_unit "041 A list of Goldbach compositions" =
 ;;
 
 (* Logic and Codes *)
+type bool_expr =
+  | Var of string
+  | Not of bool_expr
+  | And of bool_expr * bool_expr
+  | Or of bool_expr * bool_expr
+
+let table2 (b1 : string) (b2 : string) exp =
+  let rec aux (a : string) val_a (b : string) val_b = function
+    | Var (x : string) ->
+      if String.equal x a
+      then val_a
+      else if String.equal x b
+      then val_b
+      else failwith "Fail"
+    | Not e -> not (aux a val_a b val_b e)
+    | And (e1, e2) -> aux a val_a b val_b e1 && aux a val_a b val_b e2
+    | Or (e1, e2) -> aux a val_a b val_b e1 || aux a val_a b val_b e2
+  in
+  [ true, true, aux b1 true b2 true exp
+  ; true, false, aux b1 true b2 false exp
+  ; false, true, aux b1 false b2 true exp
+  ; false, false, aux b1 false b2 false exp
+  ]
+;;
+
+let%test_unit "046 Truth tables for logical expressions (2 variables)" =
+  [%test_eq: (bool * bool * bool) list]
+    (table2 "a" "b" (And (Var "a", Or (Var "a", Var "b"))))
+    [ true, true, true; true, false, true; false, true, false; false, false, false ]
+;;
+
+let table vars exp =
+  let rec eval var_to_val = function
+    | Var x -> List.Assoc.find_exn var_to_val ~equal:String.equal x
+    | Not e -> not (eval var_to_val e)
+    | And (e1, e2) -> eval var_to_val e1 && eval var_to_val e2
+    | Or (e1, e2) -> eval var_to_val e1 || eval var_to_val e2
+  in
+  let rec table_make acc vars exp =
+    match vars with
+    | [] -> [ List.rev acc, eval acc exp ]
+    | h :: t -> table_make ((h, true) :: acc) t exp @ table_make ((h, false) :: acc) t exp
+  in
+  table_make [] vars exp
+;;
+
+let%test_unit "048 Truth tables for logical expressions" =
+  [%test_eq: ((string * bool) list * bool) list]
+    (table [ "a"; "b" ] (And (Var "a", Or (Var "a", Var "b"))))
+    [ [ "a", true; "b", true ], true
+    ; [ "a", true; "b", false ], true
+    ; [ "a", false; "b", true ], false
+    ; [ "a", false; "b", false ], false
+    ]
+;;
+
+let gray n =
+  let rec aux k acc =
+    if k = n
+    then acc
+    else (
+      let first, second =
+        List.fold_left
+          ~init:([], [])
+          ~f:(fun (acc1, acc2) x -> ("0" ^ x) :: acc1, ("1" ^ x) :: acc2)
+          acc
+      in
+      aux (k + 1) (List.rev_append first second))
+  in
+  aux 1 [ "0"; "1" ]
+;;
+
+let%test_unit "049 Gray code" =
+  [%test_eq: string list] (gray 1) [ "0"; "1" ];
+  [%test_eq: string list] (gray 2) [ "00"; "01"; "11"; "10" ];
+  [%test_eq: string list]
+    (gray 3)
+    [ "000"; "001"; "011"; "010"; "110"; "111"; "101"; "100" ]
+;;
+
+(* let%test_unit "050 Huffman code" = "skip" *)
 
 (* Binary Trees *)
 
