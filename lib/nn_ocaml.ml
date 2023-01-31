@@ -612,6 +612,50 @@ let%test_unit "036 Determine the prime factors of a given positive integer (2)" 
   [%test_eq: (int * int) list] (factors 315) [ 3, 2; 5, 1; 7, 1 ]
 ;;
 
+let phi_improved n =
+  let rec aux acc = function
+    | [] -> acc
+    | (p, m) :: t -> aux ((p - 1) * Int.pow p (m - 1) * acc) t
+  in
+  aux 1 (factors n)
+;;
+
+let%test_unit "037 Calculate Euler's totient function φ(m) (improved)" =
+  [%test_eq: int] (phi_improved 10) 4;
+  [%test_eq: int] (phi_improved 13) 12
+;;
+
+let rec all_primes a b =
+  if a > b
+  then []
+  else (
+    let rest = all_primes (a + 1) b in
+    if is_prime a then a :: rest else rest)
+;;
+
+let%test_unit "039 A list of prime numbers" =
+  [%test_eq: int] (all_primes 2 7920 |> List.length) 1000
+;;
+
+let goldbach n =
+  let rec aux a =
+    if 2 < a && is_prime a && is_prime (n - a) then a, n - a else aux (a + 1)
+  in
+  aux 0
+;;
+
+let%test_unit "040 Goldbach's conjecture" = [%test_eq: int * int] (goldbach 28) (5, 23)
+
+let goldbach_list a b =
+  range a b |> List.filter ~f:(fun x -> x % 2 = 0) |> List.map ~f:(fun x -> x, goldbach x)
+;;
+
+let%test_unit "041 A list of Goldbach compositions" =
+  [%test_eq: (int * (int * int)) list]
+    (goldbach_list 9 20)
+    [ 10, (3, 7); 12, (5, 7); 14, (3, 11); 16, (3, 13); 18, (5, 13); 20, (3, 17) ]
+;;
+
 (* Logic and Codes *)
 
 (* Binary Trees *)
