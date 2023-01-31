@@ -555,6 +555,63 @@ let%test_unit "031 Determine whether a given integer number is prime" =
   [%test_eq: bool] (is_prime 12) false
 ;;
 
+let rec gcd n m =
+  if n < m
+  then gcd m n
+  else (
+    let r = n % m in
+    if r = 0 then m else gcd m r)
+;;
+
+let%test_unit "032 Determine the greatest common divisor of two positive integer numbers" =
+  [%test_eq: int] (gcd 13 27) 1;
+  [%test_eq: int] (gcd 20536 7826) 2
+;;
+
+let coprime n m = gcd n m = 1
+
+let%test_unit "033 Determine whether two positive integer numbers are coprime" =
+  [%test_eq: bool] (coprime 13 27) true;
+  [%test_eq: bool] (not (coprime 20536 7826)) true
+;;
+
+let phi m = range 1 (m - 1) |> List.filter ~f:(coprime m) |> List.length
+
+let%test_unit "034 Calculate Euler's totient function φ(m)" = [%test_eq: int] (phi 10) 4
+
+let factors n =
+  let rec aux d n =
+    if n = 1 then [] else if n % d = 0 then d :: aux d (n / d) else aux (d + 1) n
+  in
+  aux 2 n
+;;
+
+let%test_unit "035 Determine the prime factors of a given positive integer" =
+  [%test_eq: int list] (factors 315) [ 3; 3; 5; 7 ];
+  [%test_eq: int list] (factors 1) []
+;;
+
+let factors n =
+  let rec aux d n =
+    if n = 1 then [] else if n % d = 0 then d :: aux d (n / d) else aux (d + 1) n
+  in
+  let primes = aux 2 n in
+  let encode list =
+    let rec aux count acc = function
+      | [] -> []
+      | [ x ] -> (x, count + 1) :: acc
+      | a :: (b :: _ as t) ->
+        if a = b then aux (count + 1) acc t else aux 0 ((a, count + 1) :: acc) t
+    in
+    List.rev (aux 0 [] list)
+  in
+  encode primes
+;;
+
+let%test_unit "036 Determine the prime factors of a given positive integer (2)" =
+  [%test_eq: (int * int) list] (factors 315) [ 3, 2; 5, 1; 7, 1 ]
+;;
+
 (* Logic and Codes *)
 
 (* Binary Trees *)
