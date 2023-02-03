@@ -1,4 +1,4 @@
-open Base
+open! Base
 
 (* Working with Lists *)
 
@@ -740,6 +740,128 @@ let%test_unit "049 Gray code" =
 (* let%test_unit "050 Huffman code" = "skip" *)
 
 (* Binary Trees *)
+
+type 'a binary_tree =
+  | Empty
+  | Node of 'a * 'a binary_tree * 'a binary_tree [@sexp_drop_default.compare]
+[@@deriving sexp]
+
+let rec compare_trees t1 t2 =
+  match t1, t2 with
+  | Node (_, l1, r1), Node (_, l2, r2) -> compare_trees l1 l2 && compare_trees r1 r2
+  | Node _, Empty -> false
+  | Empty, Node _ -> false
+  | _ -> true
+;;
+
+let rec compare_tree_list l1 l2 =
+  if List.length l1 <> List.length l2
+  then false
+  else (
+    match l1, l2 with
+    | h1 :: t1, h2 :: t2 -> compare_trees h1 h2 && compare_tree_list t1 t2
+    | _ -> true)
+;;
+
+let add_trees
+  (left : 'a binary_tree list)
+  (right : 'a binary_tree list)
+  (init : 'a binary_tree list)
+  : 'a binary_tree list
+  =
+  let aux acc l = List.fold_left ~f:(fun a r -> Node ('x', l, r) :: a) ~init:acc right in
+  List.fold_left ~f:aux ~init left
+;;
+
+let rec cbal_tree n =
+  if n = 0
+  then [ Empty ]
+  else if n % 2 = 1
+  then (
+    let t = cbal_tree (n / 2) in
+    add_trees t t [])
+  else (
+    (* n even: n-1 nodes for the left & right subtrees altogether. *)
+    let t1 = cbal_tree ((n / 2) - 1) in
+    let t2 = cbal_tree (n / 2) in
+    add_trees t1 t2 (add_trees t2 t1 []))
+;;
+
+let%test_unit "055 Construct completely balanced binary trees" =
+  [%test_eq: bool]
+    (compare_tree_list
+       (cbal_tree 4)
+       [ Node ('x', Node ('x', Empty, Empty), Node ('x', Node ('x', Empty, Empty), Empty))
+       ; Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Node ('x', Empty, Empty)))
+       ; Node ('x', Node ('x', Node ('x', Empty, Empty), Empty), Node ('x', Empty, Empty))
+       ; Node ('x', Node ('x', Empty, Node ('x', Empty, Empty)), Node ('x', Empty, Empty))
+       ])
+    true
+;;
+
+let rec is_mirror t1 t2 =
+  match t1, t2 with
+  | Empty, Empty -> true
+  | Node (_, l1, r1), Node (_, l2, r2) -> is_mirror l1 r2 && is_mirror r1 l2
+  | _ -> false
+;;
+
+let is_symmetric = function
+  | Empty -> true
+  | Node (_, l, r) -> is_mirror l r
+;;
+
+let%test_unit "056 Symmetric binary trees" =
+  [%test_eq: bool]
+    (is_symmetric (Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty))))
+    true
+;;
+
+let construct list =
+  let rec insert tree x =
+    match tree with
+    | Empty -> Node (x, Empty, Empty)
+    | Node (y, l, r) ->
+      if x = y
+      then tree
+      else if x < y
+      then Node (y, insert l x, r)
+      else Node (y, l, insert r x)
+  in
+  List.fold_left ~f:insert ~init:Empty list
+;;
+
+let%test_unit "057 Binary search trees (dictionaries)" =
+  [%test_eq: bool]
+    (compare_trees
+       (construct [ 3; 2; 5; 7; 1 ])
+       (Node
+          ( 3
+          , Node (2, Node (1, Empty, Empty), Empty)
+          , Node (5, Empty, Node (7, Empty, Empty)) )))
+    true;
+  [%test_eq: bool] (is_symmetric (construct [ 5; 3; 18; 1; 4; 12; 21 ])) true;
+  [%test_eq: bool] (not (is_symmetric (construct [ 3; 2; 5; 7; 4 ]))) true
+;;
+
+let sym_cbal_trees n = List.filter ~f:is_symmetric (cbal_tree n)
+
+let%test_unit "058 Generate-and-test paradigm" =
+  [%test_eq: bool]
+    (compare_tree_list
+       (sym_cbal_trees 5)
+       [ Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Empty)
+           , Node ('x', Empty, Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Empty, Node ('x', Empty, Empty))
+           , Node ('x', Node ('x', Empty, Empty), Empty) )
+       ])
+    true;
+  [%test_eq: int] (List.length (sym_cbal_trees 57)) 256
+;;
 
 (* Multiway Trees *)
 
