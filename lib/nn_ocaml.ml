@@ -863,6 +863,189 @@ let%test_unit "058 Generate-and-test paradigm" =
   [%test_eq: int] (List.length (sym_cbal_trees 57)) 256
 ;;
 
+let rec hbal_tree n =
+  if n = 0
+  then [ Empty ]
+  else if n = 1
+  then [ Node ('x', Empty, Empty) ]
+  else (
+    let t1 = hbal_tree (n - 1)
+    and t2 = hbal_tree (n - 2) in
+    add_trees t1 t1 (add_trees t1 t2 (add_trees t2 t1 [])))
+;;
+
+let%test_unit "059 Construct height-balanced binary trees" =
+  [%test_eq: bool]
+    (compare_tree_list
+       (hbal_tree 3)
+       [ Node
+           ( 'x'
+           , Node ('x', Empty, Node ('x', Empty, Empty))
+           , Node ('x', Empty, Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Empty, Node ('x', Empty, Empty))
+           , Node ('x', Node ('x', Empty, Empty), Empty) )
+       ; Node
+           ( 'x'
+           , Node ('x', Empty, Node ('x', Empty, Empty))
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Empty)
+           , Node ('x', Empty, Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Empty)
+           , Node ('x', Node ('x', Empty, Empty), Empty) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Empty)
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty))
+           , Node ('x', Empty, Node ('x', Empty, Empty)) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty))
+           , Node ('x', Node ('x', Empty, Empty), Empty) )
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty))
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty)) )
+       ; Node ('x', Node ('x', Empty, Node ('x', Empty, Empty)), Node ('x', Empty, Empty))
+       ; Node ('x', Node ('x', Node ('x', Empty, Empty), Empty), Node ('x', Empty, Empty))
+       ; Node
+           ( 'x'
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty))
+           , Node ('x', Empty, Empty) )
+       ; Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Node ('x', Empty, Empty)))
+       ; Node ('x', Node ('x', Empty, Empty), Node ('x', Node ('x', Empty, Empty), Empty))
+       ; Node
+           ( 'x'
+           , Node ('x', Empty, Empty)
+           , Node ('x', Node ('x', Empty, Empty), Node ('x', Empty, Empty)) )
+       ])
+    true
+;;
+
+let max_nodes h = (1 lsl h) - 1
+
+let rec count_leaves tree =
+  match tree with
+  | Empty -> 0
+  | Node (_, Empty, Empty) -> 1
+  | Node (_, l, r) -> count_leaves l + count_leaves r
+;;
+
+let%test_unit "061A Count the leaves of a binary tree" =
+  [%test_eq: int] (count_leaves Empty) 0;
+  [%test_eq: int] (count_leaves (Node ('x', Empty, Empty))) 1
+;;
+
+let leaves t =
+  let rec aux t acc =
+    match t with
+    | Empty -> acc
+    | Node (x, Empty, Empty) -> x :: acc
+    | Node (_, l, r) -> aux r (aux l acc)
+  in
+  List.rev (aux t [])
+;;
+
+let%test_unit "061B Collect the leaves of a binary tree in a list" =
+  [%test_eq: char list] (leaves Empty) [];
+  [%test_eq: char list] (leaves (Node ('a', Empty, Empty))) [ 'a' ];
+  [%test_eq: char list] (leaves (Node ('a', Node ('b', Empty, Empty), Empty))) [ 'b' ];
+  [%test_eq: char list]
+    (leaves (Node ('a', Node ('b', Empty, Empty), Node ('c', Empty, Empty))))
+    [ 'b'; 'c' ]
+;;
+
+let internals t =
+  let rec aux t acc =
+    match t with
+    | Empty -> acc
+    | Node (_, Empty, Empty) -> acc
+    | Node (x, l, r) -> aux r (aux l (x :: acc))
+  in
+  List.rev (aux t [])
+;;
+
+let%test_unit "062A Collect the internal nodes of a binary tree in a list" =
+  [%test_eq: char list] (internals (Node ('a', Empty, Empty))) [];
+  [%test_eq: char list] (internals (Node ('a', Node ('b', Empty, Empty), Empty))) [ 'a' ];
+  [%test_eq: char list]
+    (internals (Node ('a', Node ('b', Empty, Empty), Node ('c', Empty, Empty))))
+    [ 'a' ]
+;;
+
+let at_level t level =
+  let rec aux t level acc =
+    match t with
+    | Empty -> acc
+    | Node (x, l, r) ->
+      if level = 1 then x :: acc else aux r (level - 1) (aux l (level - 1) acc)
+  in
+  List.rev (aux t level [])
+;;
+
+let%test_unit "062B Collect the nodes at a given level in a list" =
+  let example_tree =
+    Node
+      ( 'a'
+      , Node ('b', Node ('d', Empty, Empty), Node ('e', Empty, Empty))
+      , Node ('c', Empty, Node ('f', Node ('g', Empty, Empty), Empty)) )
+  in
+  [%test_eq: char list] (at_level example_tree 2) [ 'b'; 'c' ]
+;;
+
+let rec split_n list acc n =
+  match list with
+  | [] -> List.rev acc, []
+  | x :: xs -> if n = 0 then List.rev acc, list else split_n xs (x :: acc) (n - 1)
+;;
+
+let rec myflatten p c =
+  match p, c with
+  | p, [] -> List.map ~f:(fun x -> Node (x, Empty, Empty)) p
+  | x :: t, [ y ] -> Node (x, y, Empty) :: myflatten t []
+  | ph :: pt, x :: y :: t -> Node (ph, x, y) :: myflatten pt t
+  | _ -> invalid_arg "myflatten"
+;;
+
+let complete_binary_tree = function
+  | [] -> Empty
+  | list ->
+    let rec aux l = function
+      | [] -> []
+      | list ->
+        let parent, child = split_n list [] (1 lsl l) in
+        myflatten parent (aux (l + 1) child)
+    in
+    (match List.hd (aux 0 list) with
+     | Some tree -> tree
+     | None -> Empty)
+;;
+
+let%test_unit "063 Construct a complete binary tree" =
+  [%test_eq: bool]
+    (compare_trees
+       (complete_binary_tree [ 1; 2; 3; 4; 5; 6 ])
+       (Node
+          ( 1
+          , Node (2, Node (4, Empty, Empty), Node (5, Empty, Empty))
+          , Node (3, Node (6, Empty, Empty), Empty) )))
+    true
+;;
+(* let%test_unit "064 Layout a binary tree (1)" = *)
+(* let%test_unit "065 Layout a binary tree (2)" *)
+(* let%test_unit "066 Layout a binary tree (3)" *)
+(* let%test_unit "067 A string representation of binary trees" *)
+(* let%test_unit "068 Preorder and inorder sequences of binary trees" *)
+(* let%test_unit "069 Dotstring representation of binary trees" *)
+
 (* Multiway Trees *)
 
 (* Graphs *)
